@@ -1,0 +1,605 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Products API",
+        "description": "API para gestión de productos, órdenes y usuarios con JWT Auth.",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Registrar un nuevo usuario",
+                "description": "Crea una cuenta de usuario y asigna automáticamente el rol user.",
+                "operationId": "8a56853624e025573120a09a4c75d468",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Carlos Zetino"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "carlos@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuario registrado correctamente"
+                    },
+                    "422": {
+                        "description": "Error de validación"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Iniciar sesión",
+                "description": "Genera un token JWT al iniciar sesión con credenciales válidas.",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "carlos@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login exitoso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "access_token": {
+                                            "type": "string",
+                                            "example": "eyJIUzI1NiJ9..."
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "example": "bearer"
+                                        },
+                                        "role": {
+                                            "type": "string",
+                                            "example": "user"
+                                        },
+                                        "expires_in": {
+                                            "type": "integer",
+                                            "example": 3600
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciales inválidas"
+                    },
+                    "422": {
+                        "description": "Error de validación"
+                    }
+                }
+            }
+        },
+        "/api/orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Obtener órdenes",
+                "description": "Los usuarios normales solamente pueden consultar sus propias órdenes. Los administradores pueden consultar todas.",
+                "operationId": "2cd7e03021e72d9d799c12dfe179c865",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de órdenes"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Crear una orden",
+                "description": "Crea una orden utilizando los productos y cantidades enviados. El usuario se obtiene del token JWT, el total se calcula en el servidor y el stock se descuenta automáticamente.",
+                "operationId": "d690d6834318e9b064df441e854de8b9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "items"
+                                ],
+                                "properties": {
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2,
+                                                    "minimum": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Orden creada correctamente"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    },
+                    "422": {
+                        "description": "Producto inexistente, cantidad inválida o stock insuficiente"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/orders/{order}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Obtener una orden",
+                "description": "Obtiene una orden específica. Un usuario solamente puede consultar sus propias órdenes; un administrador puede consultar cualquiera.",
+                "operationId": "f090f23952a43521af6f1d133826bc37",
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "description": "ID de la orden",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Orden encontrada"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    },
+                    "403": {
+                        "description": "No tiene permiso para ver esta orden"
+                    },
+                    "404": {
+                        "description": "Orden no encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/payments": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Obtener pagos",
+                "description": "Obtiene una lista paginada de pagos.",
+                "operationId": "826dc6b24dd704607aa018a59207dd96",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de pagos"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Crear PaymentIntent para una orden",
+                "description": "Crea un PaymentIntent de Stripe utilizando el total de la orden. El monto nunca es proporcionado por el cliente.",
+                "operationId": "5e2794ba3d3c64e70873367505e4a751",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "order_id"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "description": "ID de la orden que se desea pagar.",
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "PaymentIntent creado correctamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "PaymentIntent creado correctamente."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "payment_id": {
+                                                    "type": "integer",
+                                                    "example": 6
+                                                },
+                                                "order_id": {
+                                                    "type": "integer",
+                                                    "example": 4
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 180
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "usd"
+                                                },
+                                                "client_secret": {
+                                                    "type": "string",
+                                                    "example": "pi_xxx_secret_xxx"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "La orden no pertenece al usuario autenticado"
+                    },
+                    "422": {
+                        "description": "La orden no puede ser pagada"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/payments/{payment}": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Obtener un pago",
+                "description": "Obtiene la información de un pago específico.",
+                "operationId": "c0d11adea38ecde3d94e4e281c72f01e",
+                "parameters": [
+                    {
+                        "name": "payment",
+                        "in": "path",
+                        "description": "ID del pago",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pago encontrado"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    },
+                    "404": {
+                        "description": "Pago no encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/products": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Obtener productos",
+                "description": "Obtiene una lista paginada de productos.",
+                "operationId": "1bfaa78d1c2c3848ab8165c5dadcad3e",
+                "responses": {
+                    "200": {
+                        "description": "Lista de productos"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Crear producto",
+                "description": "Crea un nuevo producto. Requiere autenticación y rol admin.",
+                "operationId": "e8185e307706e2cd84bbcf5171e2f09d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "price",
+                                    "stock"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Teclado mecánico"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Teclado mecánico RGB"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 65.5
+                                    },
+                                    "stock": {
+                                        "type": "integer",
+                                        "example": 20
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Producto creado correctamente"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    },
+                    "403": {
+                        "description": "No tiene permisos de administrador"
+                    },
+                    "422": {
+                        "description": "Error de validación"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/products/{product}": {
+            "put": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Actualizar producto",
+                "description": "Actualiza un producto existente. Requiere rol admin.",
+                "operationId": "c474d1318e5b8c3de1f4d52b6053111f",
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "description": "ID del producto",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Teclado mecánico RGB"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Teclado actualizado"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 70
+                                    },
+                                    "stock": {
+                                        "type": "integer",
+                                        "example": 15
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Producto actualizado correctamente"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    },
+                    "403": {
+                        "description": "No tiene permisos"
+                    },
+                    "404": {
+                        "description": "Producto no encontrado"
+                    },
+                    "422": {
+                        "description": "Error de validación"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Auth"
+        },
+        {
+            "name": "Orders",
+            "description": "Orders"
+        },
+        {
+            "name": "Payments",
+            "description": "Payments"
+        },
+        {
+            "name": "Products",
+            "description": "Products"
+        }
+    ]
+}
