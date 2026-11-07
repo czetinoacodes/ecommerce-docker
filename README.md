@@ -4,49 +4,6 @@ Proyecto de arquitectura de microservicios contenerizado para un entorno de prod
 
 ---
 
-## Arquitectura del Ecosistema
-
-El sistema se compone de tres servicios interconectados en una red privada virtual de tipo puente (`bridge`), donde los componentes frontend y backend exponen puertos al host, mientras que la base de datos permanece aislada:
-
-```mermaid
-flowchart TD
-    subgraph Host["Host Machine (Navegador / Cliente)"]
-        Browser["Navegador Web"]
-        HTTPClient["Cliente HTTP / Postman"]
-    end
-
-    subgraph DockerBridge["Red Privada Docker (ecommerce-network)"]
-        subgraph FrontendContainer["Contenedor: ecommerce-frontend"]
-            NextServer["Next.js 16 (App Router)<br/>Puerto 3000<br/>Usuario: nextjs (no-root)"]
-        end
-
-        subgraph BackendContainer["Contenedor: ecommerce-backend"]
-            Nginx["Nginx (Proxy Inverso)<br/>Puerto 8000"]
-            PHPFPM["PHP-FPM 8.3<br/>127.0.0.1:9000"]
-            Supervisord["Supervisor Daemon"]
-            Supervisord --> Nginx
-            Supervisord --> PHPFPM
-            Nginx -->|FastCGI| PHPFPM
-        end
-
-        subgraph MySQLContainer["Contenedor: ecommerce-mysql"]
-            MySQL["MySQL Server 8.0<br/>Puerto interno 3306"]
-        end
-    end
-
-    subgraph Storage["Volúmenes Persistentes"]
-        VolMySQL[("ecommerce-mysql-data<br/>/var/lib/mysql")]
-    end
-
-    Browser -->|http://localhost:3000| NextServer
-    HTTPClient -->|http://localhost:8000| Nginx
-    NextServer -->|http://backend:8000 (SSR / Server Actions)| Nginx
-    PHPFPM -->|Conexión PDO mysql:3306| MySQL
-    MySQL --- VolMySQL
-```
-
----
-
 ## Instrucciones de Ejecución
 
 ### 1. Requisitos Previos
